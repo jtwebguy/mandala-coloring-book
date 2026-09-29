@@ -36,6 +36,14 @@ input[type=color]{width:44px;height:32px;border:1px solid var(--line);border-rad
 .thumb{background:#fff;border-radius:10px;border:1px solid var(--line);padding:6px;cursor:pointer;text-align:center;color:#555;font-size:13px}
 .thumb:hover{outline:2px solid var(--accent)}
 .thumb canvas{width:100%;aspect-ratio:1;display:block}
+.support{color:#fff;background:#ff5e5b;border-radius:8px;padding:6px 12px;text-decoration:none;font-weight:600}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal[hidden]{display:none}
+.card{background:var(--panel);color:var(--ink);max-width:380px;width:100%;border-radius:16px;padding:24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);animation:pop .25s ease-out}
+@keyframes pop{from{transform:scale(.92);opacity:0}}
+.card .cup{font-size:40px}.card h2{margin:6px 0 8px;font-size:20px}.card p{color:var(--muted);margin:0 0 18px}
+.card .go{display:block;background:#ff5e5b;color:#fff;text-decoration:none;font-weight:650;padding:11px;border-radius:10px;margin-bottom:8px}
+.card .later{width:100%;border:none;background:none;color:var(--muted)}
 .hint{color:var(--muted);font-size:13px;margin:4px 0 0}
 @media (max-width:760px){main{flex-direction:column;padding:12px}aside{width:100%;position:static}.palette{grid-template-columns:repeat(12,1fr)}}
 </style>
@@ -47,7 +55,18 @@ input[type=color]{width:44px;height:32px;border:1px solid var(--line);border-rad
   <div class="pagelabel" id="pagelabel">Page 1 / 50</div>
   <button id="next" aria-label="Next page">&#8594;</button>
   <button id="galleryBtn">All pages</button>
+  <a id="supportLink" class="support" target="_blank" rel="noopener" hidden>&#9829; Support</a>
 </header>
+
+<div id="donate" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="donateTitle">
+  <div class="card">
+    <div class="cup">&#9749;</div>
+    <h2 id="donateTitle">You've reached page 10!</h2>
+    <p>This coloring book is free, with no ads. If it's brought you a calm moment, you can buy me a coffee to help keep new pages coming.</p>
+    <a id="donateGo" class="go" target="_blank" rel="noopener">Support on Ko-fi</a>
+    <button id="donateLater" class="later">Maybe later</button>
+  </div>
+</div>
 
 <div id="gallery"></div>
 
@@ -70,6 +89,8 @@ input[type=color]{width:44px;height:32px;border:1px solid var(--line);border-rad
 </main>
 
 <script>
+// Set your Ko-fi page here, e.g. "https://ko-fi.com/yourname". Leave empty to hide the popup and button.
+const KOFI_URL = "https://ko-fi.com/T0C127WAMM";
 const PAGES = 50, SIZE = 1000, C = SIZE / 2;
 const COLORS = ["#d62828","#f77f00","#fcbf49","#eae2b7","#ffd6a5","#fdffb6",
   "#caffbf","#80b918","#2a9d8f","#264653","#9bf6ff","#0077b6",
@@ -179,6 +200,10 @@ function loadPage(p){
   if(saved){const img = new Image(); img.onload = ()=>fctx.drawImage(img,0,0); img.src = saved;}
   store.set("mandala-last", page);
   history.replaceState(null, "", "#"+page);
+  if(page===10 && KOFI_URL && !store.get("mandala-donate-shown")){
+    store.set("mandala-donate-shown","1");
+    setTimeout(()=>{donate.hidden=false;document.getElementById("donateGo").focus()},600);
+  }
 }
 
 function save(){store.set("mandala-"+page, fillC.toDataURL("image/png"))}
@@ -259,6 +284,14 @@ function toggleGallery(show){
   gbtn.textContent = show ? "Back to page" : "All pages";
 }
 gbtn.onclick = ()=>toggleGallery(!gallery.classList.contains("show"));
+
+const donate=document.getElementById("donate");
+if(KOFI_URL){const sl=document.getElementById("supportLink");sl.href=KOFI_URL;sl.hidden=false;document.getElementById("donateGo").href=KOFI_URL;}
+const closeDonate=()=>{donate.hidden=true};
+document.getElementById("donateLater").onclick=closeDonate;
+document.getElementById("donateGo").addEventListener("click",()=>setTimeout(closeDonate,300));
+donate.addEventListener("click",e=>{if(e.target===donate)closeDonate()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDonate()});
 
 setColor(color);
 loadPage(parseInt(location.hash.slice(1)) || parseInt(store.get("mandala-last")) || 1);
